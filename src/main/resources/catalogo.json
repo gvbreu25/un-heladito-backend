@@ -1,0 +1,110 @@
+[
+  {
+    "id": "HT001",
+    "name": "Chocolate Belga 70%",
+    "category": "Helados tradicionales",
+    "price": 4500,
+    "format": "500 g",
+    "stock": 150,
+    "allergens": "Leche",
+    "offer": true,
+    "description": "Cacao belga intenso, textura cremosa y pequeñas hojuelas de chocolate semiamargo.",
+    "image": "/images/chocolate-belga.jpeg"
+  },
+  {
+    "id": "SV001",
+    "name": "Frutilla & Albahaca",
+    "category": "Sorbetes y veganos",
+    "price": 3900,
+    "format": "500 g",
+    "stock": 120,
+    "allergens": "Puede contener trazas",
+    "offer": false,
+    "description": "Frutillas frescas combinadas con una nota aromática de albahaca.",
+    "image": "https://images.pexels.com/photos/22484693/pexels-photo-22484693.jpeg"
+  },
+  {
+    "id": "PA001",
+    "name": "Maracuyá & Leche Condensada",
+    "category": "Paletas artesanales",
+    "price": 2200,
+    "format": "Unidad",
+    "stock": 250,
+    "allergens": "Leche",
+    "offer": true,
+    "description": "Paleta de maracuyá natural con un centro suave de leche condensada.",
+    "image": "https://images.pexels.com/photos/22484702/pexels-photo-22484702.jpeg"
+  },
+  {
+    "id": "PC001",
+    "name": "Sundae Caramelo Salado",
+    "category": "Postres fríos",
+    "price": 5200,
+    "format": "400 g",
+    "stock": 90,
+    "allergens": "Leche, nuez",
+    "offer": false,
+    "description": "Crema americana con salsa de caramelo salado y un toque crocante.",
+    "image": "https://images.pexels.com/photos/9500931/pexels-photo-9500931.jpeg"
+  },
+  {
+    "id": "HT002",
+    "name": "Mango Tropical",
+    "category": "Helados tradicionales",
+    "price": 4100,
+    "format": "500 g",
+    "stock": 140,
+    "allergens": "Leche",
+    "offer": true,
+    "description": "Un sabor frutal y refrescante elaborado con mango.",
+    "image": "https://images.pexels.com/photos/5060372/pexels-photo-5060372.jpeg"
+  },
+  {
+    "id": "HT003",
+    "name": "Chocolate & Avellana",
+    "category": "Helados tradicionales",
+    "price": 4700,
+    "format": "500 g",
+    "stock": 80,
+    "allergens": "Leche, avellana",
+    "offer": false,
+    "description": "Chocolate cremoso acompañado de avellanas tostadas.",
+    "image": "https://images.pexels.com/photos/5061032/pexels-photo-5061032.jpeg"
+  },
+  {
+    "id": "SV002",
+    "name": "Sorbete de Limón",
+    "category": "Sorbetes y veganos",
+    "price": 3600,
+    "format": "500 g",
+    "stock": 100,
+    "allergens": "Sin lácteos declarados",
+    "offer": false,
+    "description": "Sorbete cítrico y refrescante, ideal para los días calurosos.",
+    "image": "https://images.pexels.com/photos/32848535/pexels-photo-32848535.jpeg"
+  },
+  {
+    "id": "HT004",
+    "name": "Vainilla Artesanal",
+    "category": "Helados tradicionales",
+    "price": 4000,
+    "format": "500 g",
+    "stock": 200,
+    "allergens": "Leche",
+    "offer": false,
+    "description": "Un clásico suave elaborado con inspiración en la vainilla de Madagascar.",
+    "image": "https://images.pexels.com/photos/16630830/pexels-photo-16630830.jpeg"
+  },
+  {
+    "id": "PA002",
+    "name": "Frutos del Bosque",
+    "category": "Paletas artesanales",
+    "price": 2000,
+    "format": "Unidad",
+    "stock": 12,
+    "allergens": "0% Azucar",
+    "offer": true,
+    "description": "Paleta frutal con una mezcla de berries y sabor fresco.",
+    "image": "https://images.pexels.com/photos/39831399/pexels-photo-39831399.jpeg"
+  }
+]
