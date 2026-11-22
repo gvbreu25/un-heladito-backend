@@ -8,13 +8,14 @@ permissions:
 jobs:
   integracion:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 12
     services:
       mysql:
         image: mysql:8.4
         env:
           MYSQL_DATABASE: un_heladito_ci
           MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+          MYSQL_ROOT_HOST: "%"
         ports:
           - 3306:3306
         options: >-
@@ -34,3 +35,39 @@ jobs:
           test_file=src/test/java/cl/duoc/unheladito/ApiIntegrationTest.java
           sed -i 's|jdbc:h2:mem:heladito-test;DB_CLOSE_DELAY=-1|jdbc:mysql://127.0.0.1:3306/un_heladito_ci?allowPublicKeyRetrieval=true\&sslMode=DISABLED|; s|spring.datasource.username=sa|spring.datasource.username=root|' "$test_file"
           mvn -B -ntp test
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Preparar el frontend y Chromium
+        shell: bash
+        run: |
+          git clone --depth 1 https://github.com/gvbreu25/un-heladito-frontend.git "$RUNNER_TEMP/heladito-web"
+          npm --prefix "$RUNNER_TEMP/heladito-web" ci
+          npm install --prefix "$RUNNER_TEMP/heladito-browser" playwright
+          "$RUNNER_TEMP/heladito-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Verificar la aplicación en Chromium
+        shell: bash
+        run: |
+          export JWT_SECRET="$(openssl rand -base64 32)"
+          export DEMO_ADMIN_PASSWORD="$(openssl rand -hex 16)"
+          export DEMO_VENDOR_PASSWORD="$(openssl rand -hex 16)"
+          export QA_CLIENT_PASSWORD="$(openssl rand -hex 16)"
+          export DB_URL="jdbc:mysql://127.0.0.1:3306/un_heladito_ci?allowPublicKeyRetrieval=true&sslMode=DISABLED"
+          export DB_USER=root
+          export NODE_PATH="$RUNNER_TEMP/heladito-browser/node_modules"
+          export QA_CAPTURE_DIR="$RUNNER_TEMP/capturas"
+          mvn -B -ntp spring-boot:run > "$RUNNER_TEMP/heladito-api.log" 2>&1 &
+          npm --prefix "$RUNNER_TEMP/heladito-web" run dev -- --host localhost --strictPort > "$RUNNER_TEMP/heladito-web.log" 2>&1 &
+          for try in {1..75}; do
+            if curl -fsS http://localhost:8080/api/v1/productos > /dev/null && curl -fsS http://localhost:5173/ > /dev/null; then break; fi
+            if [ "$try" -eq 75 ]; then tail -70 "$RUNNER_TEMP/heladito-api.log"; exit 1; fi
+            sleep 2
+          done
+          node pruebas/navegador.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: capturas-un-heladito
+          path: ${{ runner.temp }}/capturas/
+          if-no-files-found: ignore
+          retention-days: 7
