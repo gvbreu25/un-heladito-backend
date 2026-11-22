@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -16,7 +17,10 @@ import org.springframework.security.oauth2.core.*;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
@@ -35,7 +39,8 @@ public class SeguridadConfig {
     public static final String EMISOR = "un-heladito";
 
     @Bean
-    SecurityFilterChain filtros(HttpSecurity http, @Value("${app.cookie.secure}") boolean cookieSegura) throws Exception {
+    SecurityFilterChain filtros(HttpSecurity http, JwtDecoder decoder,
+                                @Value("${app.cookie.secure}") boolean cookieSegura) throws Exception {
         var csrf = CookieCsrfTokenRepository.withHttpOnlyFalse();
         csrf.setCookieCustomizer(cookie -> cookie.sameSite("Strict").secure(cookieSegura).path("/"));
 
@@ -45,11 +50,28 @@ public class SeguridadConfig {
         var converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(roles);
 
+        // El JWT viaja en una cookie, por lo que las peticiones deben conservar la protección CSRF.
+        var proveedor = new JwtAuthenticationProvider(decoder);
+        proveedor.setJwtAuthenticationConverter(converter);
+        var filtroJwt = new BearerTokenAuthenticationFilter(new ProviderManager(proveedor));
+        filtroJwt.setBearerTokenResolver(request -> {
+            String ruta = request.getServletPath();
+            if (ruta.isEmpty()) ruta = request.getRequestURI();
+            if (!ruta.startsWith("/api/v1/") || ruta.equals("/api/v1/auth/csrf")
+                    || ruta.equals("/api/v1/auth/login") || ruta.equals("/api/v1/auth/registro")) {
+                return null;
+            }
+            Cookie cookie = WebUtils.getCookie(request, COOKIE_SESION);
+            return cookie == null ? null : cookie.getValue();
+        });
+
         http.cors(Customizer.withDefaults())
                 .logout(config -> config.disable())
                 .csrf(config -> config.csrfTokenRepository(csrf)
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
                 .sessionManagement(config -> config.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(config -> config.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint()))
+                .addFilter(filtroJwt)
                 .authorizeHttpRequests(reglas -> reglas
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**", "/error").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/auth/csrf", "/api/v1/productos/**", "/api/v1/categorias").permitAll()
@@ -59,19 +81,7 @@ public class SeguridadConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/pedidos/mios").hasAnyRole("CLIENTE", "ADMINISTRADOR")
                         .requestMatchers(HttpMethod.POST, "/api/v1/pedidos").hasAnyRole("CLIENTE", "ADMINISTRADOR")
                         .requestMatchers(HttpMethod.GET, "/api/v1/pedidos/**").hasAnyRole("ADMINISTRADOR", "VENDEDOR")
-                        .anyRequest().denyAll())
-                .oauth2ResourceServer(config -> config
-                        .bearerTokenResolver(request -> {
-                            String ruta = request.getServletPath();
-                            if (ruta.isEmpty()) ruta = request.getRequestURI();
-                            if (!ruta.startsWith("/api/v1/") || ruta.equals("/api/v1/auth/csrf")
-                                    || ruta.equals("/api/v1/auth/login") || ruta.equals("/api/v1/auth/registro")) {
-                                return null;
-                            }
-                            Cookie cookie = WebUtils.getCookie(request, COOKIE_SESION);
-                            return cookie == null ? null : cookie.getValue();
-                        })
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(converter)));
+                        .anyRequest().denyAll());
         return http.build();
     }
 
