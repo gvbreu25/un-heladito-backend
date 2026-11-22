@@ -1,0 +1,36 @@
+name: Verificación con MySQL
+on:
+  push:
+    branches:
+      - verificacion-mysql
+permissions:
+  contents: read
+jobs:
+  integracion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: un_heladito_ci
+          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Ejecutar las pruebas sobre MySQL
+        shell: bash
+        run: |
+          test_file=src/test/java/cl/duoc/unheladito/ApiIntegrationTest.java
+          sed -i 's|jdbc:h2:mem:heladito-test;DB_CLOSE_DELAY=-1|jdbc:mysql://127.0.0.1:3306/un_heladito_ci?allowPublicKeyRetrieval=true\&sslMode=DISABLED|; s|spring.datasource.username=sa|spring.datasource.username=root|' "$test_file"
+          mvn -B -ntp test
